@@ -1,0 +1,27 @@
+{
+  "name": "testatom",
+  "version": "1.0.0",
+  "moduleType": [
+    "globals"
+  ],
+  "private": true,
+  "dependencies": {
+    "angular": "~1.3.x",
+    "roboto-fontface": "~0.2.x",
+    "webcomponentsjs": "~0.5.x",
+    "polymer-polymer": "~0.5.x",
+    "core-ajax": "Polymer/core-ajax#0.5.x",
+    "core-component-page": "Polymer/core-component-page#^0.5",
+    "core-header-panel": "Polymer/core-header-panel#^0.5",
+    "core-toolbar": "Polymer/core-toolbar#^0.5",
+    "paper": "Polymer/paper-tabs#^0.5",
+    "uikit": "~2.16.x"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
