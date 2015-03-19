@@ -6,6 +6,7 @@
   ],
   "private": true,
   "dependencies": {
+    "jquery": "~2.1.3",
     "angular": "~1.3.x",
     "roboto-fontface": "~0.2.x",
     "webcomponentsjs": "~0.5.x",
