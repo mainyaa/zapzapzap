@@ -1,6 +1,6 @@
 {
   "name": "Zapzapzap",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "build/main.js",
   "dependencies": {
     "ansi-to-html": "0.3.0",
