@@ -1,6 +1,6 @@
 # Zapzapzap
 
-Zapzapzap is a simple application for TRPG game user sheets on Mac OS X.
+Zapzapzap is a simple todo application on Mac OS X.
 
 ## Install
 
@@ -14,6 +14,8 @@ this app using power of [atom-shell](https://github.com/atom/atom-shell)
 
 To run the app in development:
 
+- `gulp atom-download`
+- `gulp build:ng2`
 - `gulp` or `gulp --verbose`
 
 building mac app:
