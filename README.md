@@ -2,6 +2,10 @@
 
 Zapzapzap is a simple todo application on Mac OS X.
 
+## How it works
+
+Angular 2 is dependencies http server. Zapzapzap is create http server on machine. This server can't be access from other machines.
+
 ## Install
 
 check [Download](https://github.com/mainyaa/zapzapzap/release)
@@ -14,16 +18,15 @@ this app using power of [atom-shell](https://github.com/atom/atom-shell)
 
 To run the app in development:
 
-- `gulp atom-download`
-- `gulp build:ng2`
-- `gulp` or `gulp --verbose`
+- `gulp clean init`
+- `gulp`
 
 building mac app:
 
-- `echo '-' > identity`
+- `echo - "-" > identity`
 - `gulp release` or `gulp release --beta`
 
-if build successful you get `./dist/osx/Zapzapzap-1.0.0.zip` and `./dist/osx/Zapzapzap.app`
+if build successful you get `./dist/osx/Zapzapzap-0.0.2.zip` and `./dist/osx/Zapzapzap.app`
 
 ## Uninstalling
 

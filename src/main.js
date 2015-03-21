@@ -3,9 +3,8 @@
 var app = require('app');  // Module to control application life.
 var BrowserWindow = require('browser-window');  // Module to create native browser window.
 var globalShortcut = require('global-shortcut');
-var utils = require('./js/utils');
+var server = require('./js/server');
 var open = require('open');
-var ipc = require('ipc');
 var _ = require('lodash');
 
 var requestLogger = function(req, res, error) {
@@ -20,23 +19,12 @@ var options = {
     host: 'localhost', // only access local
     ssl: false,
     root: 'build',
-    cache: '-1',  // nocache
     showDir: false,
     autoIndex: false,
     robots: false,
     logFn: requestLogger,
 };
 var isFullScreen = false;
-var ipc = require('ipc');
-ipc.on('asynchronous-message', function(event, arg) {
-    console.log(arg);  // prints "ping"
-    event.sender.send('asynchronous-reply', 'pong');
-});
-
-ipc.on('synchronous-message', function(event, arg) {
-    console.log(arg);  // prints "ping"
-    event.returnValue = 'pong';
-});
 
 // Report crashes to our server.
 require('crash-reporter').start();
@@ -52,38 +40,28 @@ app.on('window-all-closed', function() {
     }
 });
 
-// This method will be called when atom-shell has done everything
-// initialization and ready for creating browser windows.
+
+//app.commandLine.appendSwitch('remote-debugging-port', '8315');
+//app.commandLine.appendSwitch('host-rules', 'MAP * 127.0.0.1');
 app.on('ready', function() {
-    utils.createServer(options).done(function (uri, server) {
-        console.log('ready');
+    console.log('app:ready');
+    server.createServer(options).done(function (uri, server) {
+        console.log('server:ready');
         // Create the browser window.
         window = new BrowserWindow({width: 1140, height: 900});
         //window.openDevTools()
-        var ret = globalShortcut.register('ctrl+x', function() {
-            console.log('ctrl+x is pressed');
-            window.setFullScreen(true);
-        });
-        var ret = globalShortcut.register('ctrl+z', function() {
-            console.log('ctrl+z is pressed');
-            isFullScreen = !isFullScreen
-            window.FullScreen(isFullScreen);
-        });
-
-        //console.log('file://' + __dirname + '/index.html');
-        //window.loadUrl('file://' + __dirname + '/index.html');
-        console.log(uri+'/index.html');
-        console.log(ipc);
-        //window.webContents.send('webview-loadUrl', uri+'/index.html');
-        open('http://localhost:3000/index.html');
-        window.loadUrl('http://localhost:3000/index.html');
-        // and load the index.html of the app.
+        // waiting server up in 3 sec
+        _.delay(function () {
+            //console.log('file://' + __dirname + '/index.html');
+            //window.loadUrl('file://' + __dirname + '/index.html');
+            console.log(uri+'/index.html');
+            //window.webContents.send('webview-loadUrl', uri+'/index.html');
+            //open(uri+'/index.html');
+            window.loadUrl(uri+'/index.html');
+        }, 3000);
 
         // Emitted when the window is closed.
         window.on('closed', function() {
-            // Dereference the window object, usually you would store windows
-            // in an array if your app supports multi windows, this is the time
-            // when you should delete the corresponding element.
             window = null;
         });
     });

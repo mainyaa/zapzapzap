@@ -6,14 +6,13 @@ var gutil = require('gulp-util');
 var gulpif = require('gulp-if');
 var changed = require('gulp-changed');
 var debug = require('gulp-debug');
+var rimraf = require( 'rimraf');
 var wiredep = require('wiredep').stream;
 var sass = require('gulp-sass');
 var jshint = require('gulp-jshint');
-var browserSync = require('browser-sync');
 var runSequence = require('run-sequence');
 var colors   = require('colors');
 var _   = require('lodash');
-var reload = browserSync.reload;
 var atomdownload = require('gulp-download-atom-shell');
 
 var fs = require('fs');
@@ -54,7 +53,7 @@ var options = {
     bundle: 'com.zapzapzap.zapzapzap'
 };
 options.distosx = './dist/osx/' + options.appFilename + '/Contents/Resources/app/build',
-options.dist = options.dev ? options.build : options.distosx
+    options.dist = options.dev ? options.build : options.distosx
 options.distBrowser = options.dist + '/browser'
 options.atompath = options.tmp+'/Atom.app/Contents/MacOS/Atom '
 options.launch = options.dev ? options.atompath + options.build+' --proxy-server=127.0.0.1:3000 --debug=5858' : options.atompath + options.distosx + ' --proxy-server=127.0.0.1:3000 --debug=5858';
@@ -62,13 +61,6 @@ options.launch = options.dev ? options.atompath + options.build+' --proxy-server
 if (isVerbose) {
     console.log(options);
 }
-
-gulp.task('atom-download', function(cb) {
-    atomdownload({
-        version: '0.21.1',
-        outputDir: options.tmp
-    }, cb);
-});
 
 gulp.task('browser-sync', function() {
     browserSync({
@@ -78,9 +70,6 @@ gulp.task('browser-sync', function() {
         open: false,
     });
 });
-gulp.task('bs-reload', function () {
-    browserSync.reload();
-});
 
 gulp.task('scripts', function() {
     return gulp.src([
@@ -88,10 +77,7 @@ gulp.task('scripts', function() {
         options.src+'/js/**/*.js'
     ], {base: options.src})
     .pipe(debug())
-    .pipe(gulp.dest(options.dist))
-    .pipe(reload({
-        stream: true
-    }));
+    .pipe(gulp.dest(options.dist));
 });
 
 gulp.task('sass', function() {
@@ -99,9 +85,6 @@ gulp.task('sass', function() {
     .pipe(debug())
     .pipe(sass())
     .pipe(gulp.dest(options.dist))
-    .pipe(reload({
-        stream: true
-    }));
 });
 
 gulp.task('lint', function() {
@@ -109,16 +92,10 @@ gulp.task('lint', function() {
     .pipe(debug())
     .pipe(jshint())
     .pipe(jshint.reporter('default'))
-    .pipe(reload({
-        stream: true
-    }));
     return gulp.src(options.src+'/js/**/*.js', {base: '.'})
     .pipe(debug())
     .pipe(jshint())
     .pipe(jshint.reporter('default'))
-    .pipe(reload({
-        stream: true
-    }));
 });
 
 gulp.task('html', function() {
@@ -129,9 +106,6 @@ gulp.task('html', function() {
     .pipe(debug())
     .pipe(wiredep())
     .pipe(gulp.dest(options.dist))
-    .pipe(reload({
-        stream: true
-    }));
 });
 
 gulp.task('watch', function() {
@@ -145,49 +119,44 @@ gulp.task('launch', shell.task([
     //'open http://127.0.0.1:8080/debug?port=5858'
 ]));
 
-gulp.task('copy', ['copy-atom', 'copy-root', 'copy-bower'/*, 'copy-bower-browser'*/, 'copy-node'])
+gulp.task('copy', function(cb) {
+    runSequence(
+        ['copy-node', 'copy-bower'/*, 'copy-bower-browser'*/, 'copy-atom', 'copy-root'],
+        cb
+    );
+});
 gulp.task('copy-atom', function () {
     return gulp.src('src/*.json', {base: '.'})
-        .pipe(debug())
-        .pipe(gulp.dest(options.dist))
-        .pipe(gulpif(options.dev, reload({
-            stream: true
-        })));
+    .pipe(debug())
+    .pipe(gulp.dest(options.dist))
 });
 gulp.task('copy-root', function () {
     return gulp.src(['./*.js', './*.html'], {base: options.src})
     .pipe(debug())
     .pipe(gulp.dest(options.dist))
-    .pipe(gulpif(options.dev, reload({
-        stream: true
-    })));
 });
 gulp.task('copy-bower', function () {
     return gulp.src('./bower_components/**/*', {base: '.'})
-    .pipe(debug())
+    ////.pipe(debug())
     .pipe(gulp.dest(options.dist))
-    .pipe(gulpif(options.dev, reload({
-        stream: true
-    })));
 });
 gulp.task('copy-bower-browser', function () {
     return gulp.src('./bower_components/**/*', {base: '.'})
-    .pipe(debug())
+    //.pipe(debug())
     .pipe(gulp.dest(options.distBrowser))
-    .pipe(gulpif(options.dev, reload({
-        stream: true
-    })));
 });
 gulp.task('copy-node', function () {
     return gulp.src('./node_modules/**/*', {base: '.'})
-    .pipe(debug())
+    //.pipe(debug())
     .pipe(gulp.dest(options.dist))
-    .pipe(gulpif(options.dev, reload({
-        stream: true
-    })));
 });
 
-gulp.task('copy-all', ['copy-all-atom', 'copy-all-bower', 'copy-all-node'])
+gulp.task('copy-all', function(cb) {
+    runSequence(
+        ['copy-all-node', 'copy-all-atom', 'copy-all-bower'],
+        cb
+    );
+});
 gulp.task('copy-all-atom', function () {
     return gulp.src('').pipe(shell([
         'mkdir -p <%= dist %>',
@@ -215,7 +184,22 @@ gulp.task('copy-all-node', function () {
     ],{templateData: options}));
 });
 
-gulp.task('build:ng2', shell.task(['sh build.sh']));
+gulp.task('clean', function(cb) {
+    rimraf('./{build,dist}', cb);
+});
+
+gulp.task('init', function(cb) {
+    runSequence(
+        ['init-atom'],
+    cb);
+});
+gulp.task('init-atom', function(cb) {
+    atomdownload({
+        version: '0.21.1',
+        outputDir: options.tmp
+    }, cb);
+});
+
 
 gulp.task('dist', function () {
     var stream = gulp.src('').pipe(shell([
@@ -296,25 +280,31 @@ gulp.task('settings', function () {
         };
         return src;
     };
-    stringsrc('settings.json', JSON.stringify(settings)).pipe(gulp.dest('dist/osx/' + options.appFilename.replace(' ', '\ ').replace('(','\(').replace(')','\)') + '/Contents/Resources/app'));
+    return stringsrc('settings.json', JSON.stringify(settings)).pipe(gulp.dest('dist/osx/' + options.appFilename.replace(' ', '\ ').replace('(','\(').replace(')','\)') + '/Contents/Resources/app'));
 });
 
 
-gulp.task('release', function () {
-    if (!options.dev) {
-        runSequence('atom-download', 'dist', 'lint', 'sass', 'scripts', 'html', 'settings', 'copy-all', 'sign', 'zip');
-    } else {
-        runSequence('atom-download', 'dist', 'lint', 'sass', 'scripts', 'html', 'settings', 'copy-all', 'sign', 'zip', 'watch',
-                    'browser-sync',
-                    'launch');
-    }
+gulp.task('init', ['dist', 'init-atom']);
+
+gulp.task('release', function (cb) {
+    runSequence(
+        'clean',
+        'init',
+        ['copy-all', 'lint', 'sass', 'scripts', 'html', 'settings'],
+        'watch',
+        'sign',
+        'zip',
+        cb
+    );
 });
 
-gulp.task('default', function() {
-    runSequence(['copy-all', 'lint', 'sass', 'scripts', 'html', 'watch'],[
-          'browser-sync',
-          'launch'
-]);
+gulp.task('default', function(cb) {
+    runSequence(
+        ['copy-all', 'lint', 'sass', 'scripts', 'html', 'settings'],
+        'watch',
+        'launch',
+        cb
+    );
 });
 
 

@@ -1,7 +1,7 @@
 {
   "name": "Zapzapzap",
-  "version": "0.0.2",
-  "main": "main.js",
+  "author": "Kazuyuki Mori",
+  "version": "0.0.3",
   "dependencies": {
     "ansi-to-html": "0.3.0",
     "async": "^0.9.0",
@@ -23,7 +23,6 @@
     "underscore": "^1.8.2"
   },
   "devDependencies": {
-    "browser-sync": "~2.0.x",
     "gulp": "~3.8.x",
     "gulp-changed": "^1.2.1",
     "gulp-concat": "^2.5.2",
@@ -42,14 +41,22 @@
     "mocha": "~2.1.x",
     "phantomjs": "~1.9.x",
     "require-dir": "~0.1.x",
+    "rimraf": "^2.3.2",
     "run-sequence": "^1.0.2",
     "wiredep": "~2.2.x"
   },
   "scripts": {
     "start": "gulp",
-    "test": "jest",
-    "postinstall": "bower install",
+    "postinstall": "bower install && gulp init",
     "lint": "gulp lint"
+  },
+  "homepage": "https://github.com/mainyaa/zapzapzap",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mainyaa/zapzapzap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mainyaa/zapzapzap/issues"
   },
   "licenses": [
     {
@@ -58,4 +65,3 @@
     }
   ]
 }
-

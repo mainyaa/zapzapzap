@@ -7,7 +7,7 @@ var portScanner   = require('portscanner');
 Promise.promisifyAll(portScanner);
 Promise.promisifyAll(httpServer);
 
-var utils = {
+var server = {
 
     /**
      * @param {Number} min
@@ -25,19 +25,19 @@ var utils = {
         var uri;
         var server;
         return new Promise(function(fulfill, reject) {
-            utils.getRandomInt(3000,3994)
+            server.getRandomInt(3000,3994)
             .then(function(randomPort){
-                return utils.getPorts(randomPort);
+                return server.getPorts(randomPort);
             }).done(function(port){
                 if (port === undefined) {
                     reject('port is undefined');
                     return;
                 }
-                options.port = port;
+                options.port = 3000;
                 console.log(options);
                 server = httpServer.createServer(options);
                 server.listen(options.port, options.host);
-                uri = utils.makeUrl(options.ssl ? 'https' : 'http', options.host, options.port);
+                uri = server.makeUrl(options.ssl ? 'https' : 'http', options.host, options.port);
                 console.log(server);
                 console.log(uri);
                 console.log('Starting up http-server, serving '.yellow + 
@@ -77,10 +77,10 @@ var utils = {
         });
     },
 };
-Promise.promisifyAll(utils);
+Promise.promisifyAll(server);
 
-module.exports              = utils;
-module.exports.getRandomInt = utils.getRandomInt;
-module.exports.createServer = utils.createServer;
-module.exports.getPorts     = utils.getPorts;
-module.exports.makeUrl      = utils.makeUrl;
+module.exports              = server;
+module.exports.getRandomInt = server.getRandomInt;
+module.exports.createServer = server.createServer;
+module.exports.getPorts     = server.getPorts;
+module.exports.makeUrl      = server.makeUrl;
