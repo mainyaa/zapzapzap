@@ -30,15 +30,18 @@ var utils = {
                 return utils.getPorts(randomPort);
             }).done(function(port){
                 if (port === undefined) {
-                    reject(error);
+                    reject('port is undefined');
                     return;
                 }
                 options.port = port;
+                console.log(options);
                 server = httpServer.createServer(options);
                 server.listen(options.port, options.host);
-                uri = utils.makeUrlAsync(options.ssl ? 'https' : 'http', options.host, options.port)
+                uri = utils.makeUrl(options.ssl ? 'https' : 'http', options.host, options.port);
+                console.log(server);
+                console.log(uri);
                 console.log('Starting up http-server, serving '.yellow + 
-                server.root.cyan +
+                options.root.cyan +
                 ' on: '.yellow +
                 uri.cyan);
                 fulfill(uri);
@@ -66,7 +69,7 @@ var utils = {
      * @param {Function} callback
      * @returns {Function} Promise
      */
-    getPorts: function (port, callback) {
+    getPorts: function (port) {
         var max   = port + 5;
         return portScanner.findAPortNotInUseAsync(port, max, {
             host: 'localhost',
