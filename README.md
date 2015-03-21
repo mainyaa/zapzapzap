@@ -1,6 +1,7 @@
 # Zapzapzap
 
 Zapzapzap is a simple todo application on Mac OS X.
+It is based on [kitematic](https://github.com/kitematic/kitematic) and [ng2do](https://github.com/davideast/ng2do).
 
 ## How it works
 
@@ -38,7 +39,7 @@ rm -rf ~/Library/Application\ Support/Zapzapzap
 
 ## hack
 
-`deps/es6-shim/es6-shim.js` and `deps/zone.js/zone.js` is patched
+`deps/es6-shim/es6-shim.js` and `deps/zone.js/zone.js` is patched.
 
 ## Copyright and License
 
