@@ -36,6 +36,10 @@ if build successful you get `./dist/osx/Zapzapzap-0.0.2.zip` and `./dist/osx/Zap
 rm -rf ~/Library/Application\ Support/Zapzapzap
 ```
 
+## hack
+
+`deps/es6-shim/es6-shim.js` and `deps/zone.js/zone.js` is patched
+
 ## Copyright and License
 
 Code released under the [Apache license](LICENSE).

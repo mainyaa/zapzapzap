@@ -1,0 +1,3 @@
+[submodule "quickstart"]
+	path = quickstart
+	url = git://github.com/angular/quickstart.git
