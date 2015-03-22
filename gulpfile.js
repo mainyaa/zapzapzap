@@ -57,7 +57,7 @@ options.dist = options.dev ? options.build : options.distosx
 options.quiet = options.dev ? false : true
 options.distBrowser = options.dist + '/browser'
 options.atompath = options.tmp+'/Atom.app/Contents/MacOS/Atom '
-options.launch = options.dev ? options.atompath + options.build+' --proxy-server=127.0.0.1:3000 --debug=5858' : options.atompath + options.distosx + ' --proxy-server=127.0.0.1:3000';
+options.launch = options.dev ? options.atompath + options.build+' --debug=5858' : options.atompath + options.distosx;
 
 if (isVerbose) {
     console.log(options);
@@ -135,22 +135,22 @@ gulp.task('copy-root', function () {
 gulp.task('copy-bower', function () {
     return gulp.src('./bower_components/**/*', {base: '.'})
     ////.pipe(debug())
-    .pipe(gulp.dest(options.dist));
+    .pipe(gulp.dest(options.dist+'bower_components'));
 });
 gulp.task('copy-bower-browser', function () {
     return gulp.src('./bower_components/**/*', {base: '.'})
     //.pipe(debug())
-    .pipe(gulp.dest(options.distBrowser));
+    .pipe(gulp.dest(options.distBrowser+'bower_components'));
 });
 gulp.task('copy-node', function () {
     return gulp.src('./node_modules/**/*', {base: '.'})
     //.pipe(debug())
-    .pipe(gulp.dest(options.dist));
+    .pipe(gulp.dest(options.dist+'node_modules'));
 });
 
 gulp.task('copy-all', function(cb) {
     runSequence(
-        ['copy-all-node', 'copy-all-atom', 'copy-all-bower'],
+        ['copy-all-node', 'copy-all-bower', 'copy-all-bower-browser', 'copy-all-atom'],
         cb
     );
 });
@@ -162,23 +162,28 @@ gulp.task('copy-all-atom', function () {
         'cp -rf <%= src %>/*.json <%= dist %>',
         'cp -rf <%= src %>/*.js <%= dist %>',
         'cp -rf <%= src %>/*.html <%= dist %>',
-        'cp -rf deps <%= dist %>',
-        'cp -rf quickstart <%= dist %>',
+        'cp -rf <%= srcBrowser %>/*.js <%= distBrowser %>',
+        'cp -rf <%= srcBrowser %>/*.html <%= distBrowser %>',
+        'cp -rf deps <%= distBrowser %>',
+        'cp -rf quickstart <%= distBrowser%>',
     ],{templateData: options}));
 });
 gulp.task('copy-all-bower', function () {
     return gulp.src('').pipe(shell([
-        'cp -rf bower_components <%= dist %>',
+        'mkdir -p <%= dist %>/bower_components',
+        'cp -rf ./bower_components/* <%= dist %>/bower_components',
     ],{templateData: options}));
 });
 gulp.task('copy-all-bower-browser', function () {
     return gulp.src('').pipe(shell([
-        'cp -rf bower_components <%= dist %>/browser',
+        'mkdir -p <%= distBrowser %>/bower_components',
+        'cp -rf ./bower_components/* <%= distBrowser %>/bower_components',
     ],{templateData: options}));
 });
 gulp.task('copy-all-node', function () {
     return gulp.src('').pipe(shell([
-        'cp -rf node_modules <%= dist %>',
+        'mkdir -p <%= dist %>/node_modules',
+        'cp -rf ./node_modules/* <%= dist %>/node_modules',
     ],{templateData: options}));
 });
 
@@ -186,11 +191,6 @@ gulp.task('clean', function(cb) {
     rimraf('./build', cb);
 });
 
-gulp.task('init', function(cb) {
-    runSequence(
-        ['init-atom'],
-    cb);
-});
 gulp.task('init-atom', function(cb) {
     atomdownload({
         version: '0.21.1',
@@ -201,7 +201,7 @@ gulp.task('init-atom', function(cb) {
 
 gulp.task('dist', function () {
     var stream = gulp.src('').pipe(shell([
-        'rm -Rf dist',
+        'rm -rf dist',
         'mkdir -p ./dist/osx',
         'cp -R ./cache/Atom.app ./dist/osx/<%= filename %>',
         'mv ./dist/osx/<%= filename %>/Contents/MacOS/Atom ./dist/osx/<%= filename %>/Contents/MacOS/<%= name %>',
@@ -281,26 +281,29 @@ gulp.task('settings', function () {
 });
 
 
-gulp.task('init', ['dist', 'init-atom']);
+gulp.task('init', function(cb) {
+    runSequence(
+        ['dist', 'init-atom'],
+        cb
+    );
+});
 
 gulp.task('release', function (cb) {
     runSequence(
-        'clean',
         'init',
         ['copy-all', 'lint', 'sass', 'scripts', 'html', 'settings'],
-        'watch',
         'sign',
         'zip',
-        'launch',
+        'watch', 'launch',
         cb
     );
 });
 
 gulp.task('default', function(cb) {
     runSequence(
+        'clean',
         ['copy-all', 'lint', 'sass', 'scripts', 'html', 'settings'],
-        'watch',
-        'launch',
+        'watch', 'launch',
         cb
     );
 });

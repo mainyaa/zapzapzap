@@ -32,7 +32,7 @@ var server = {
                     reject('port is undefined');
                     return;
                 }
-                options.port = 3000;
+                options.port = port;
                 console.log(options);
                 httpd = httpServer.createServer(options);
                 httpd.listen(options.port, options.host);

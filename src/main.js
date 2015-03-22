@@ -25,7 +25,7 @@ var requestLogger = function(req, res, error) {
 var options = {
     host: 'localhost', // only access local
     ssl: false,
-    root: 'build',
+    root: 'build/browser/',
     showDir: false,
     autoIndex: false,
     robots: false,
@@ -56,9 +56,6 @@ app.on('ready', function() {
         console.log('server:ready');
         // Create the browser window.
         window = new BrowserWindow({width: 1140, height: 900});
-        if (dev) {
-            window.openDevTools()
-        }
         // waiting server up in 3 sec
         _.delay(function () {
             //console.log('file://' + __dirname + '/index.html');
@@ -67,7 +64,10 @@ app.on('ready', function() {
             //window.webContents.send('webview-loadUrl', uri+'/index.html');
             //open(uri+'/index.html');
             window.loadUrl(uri+'/index.html');
-        }, 3000);
+            if (dev) {
+                window.openDevTools()
+            }
+        }, 5000);
 
         // Emitted when the window is closed.
         window.on('closed', function() {
