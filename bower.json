@@ -13,7 +13,7 @@
     "html5-boilerplate": "~5.0.0",
     "es6-shim": "~0.27.1",
     "es5-shim": "~4.1.0",
-    "zone.js": "angular/zone.js#~0.4.1"
+    "zone.js": "angular/zone.js#0.4.1"
   },
   "ignore": [
     "**/.*",

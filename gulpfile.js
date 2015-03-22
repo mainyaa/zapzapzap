@@ -280,10 +280,24 @@ gulp.task('settings', function () {
     return stringsrc('settings.json', JSON.stringify(settings)).pipe(gulp.dest('dist/osx/' + options.appFilename.replace(' ', '\ ').replace('(','\(').replace(')','\)') + '/Contents/Resources/app'));
 });
 
+gulp.task('patch', function () {
+    return gulp.src('').pipe(shell([
+        'cp -rf ./bower_components/zone.js/zone.js deps/zone.js/zone.js',
+        'cp -rf ./quickstart/dist/es6-shim.js deps/es6-shim/es6-shim.js',
+        'cd deps/zone.js/ && patch -c zone.js < zone.js.patch',
+        'cd deps/es6-shim/ && patch -c es6-shim.js < es6-shim.js.patch',
+    ],{templateData: options}));
+});
+gulp.task('unpatch', function () {
+    return gulp.src('').pipe(shell([
+        'cp -rf ./bower_components/zone.js/zone.js deps/zone.js/zone.js',
+        'cp -rf ./quickstart/dist/es6-shim.js deps/es6-shim/es6-shim.js',
+    ],{templateData: options}));
+});
 
 gulp.task('init', function(cb) {
     runSequence(
-        ['dist', 'init-atom'],
+        ['dist', 'init-atom', 'patch'],
         cb
     );
 });
@@ -294,18 +308,23 @@ gulp.task('release', function (cb) {
         ['copy-all', 'lint', 'sass', 'scripts', 'html', 'settings'],
         'sign',
         'zip',
-        'watch', 'launch',
         cb
     );
 });
 
-gulp.task('default', function(cb) {
+gulp.task('build', function(cb) {
     runSequence(
         'clean',
         ['copy-all', 'lint', 'sass', 'scripts', 'html', 'settings'],
-        'watch', 'launch',
         cb
     );
+});
+gulp.task('default', function(cb) {
+    runSequence(
+        'build',
+        'watch',
+        'launch',
+        cb);
 });
 
 

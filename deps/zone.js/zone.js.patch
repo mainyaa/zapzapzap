@@ -1,0 +1,25 @@
+*** bower_components/zone.js/zone.js	2015-02-21 02:40:58.000000000 +0900
+--- deps/zone.js/zone.js	2015-03-22 15:07:54.000000000 +0900
+***************
+*** 627,636 ****
+  });
+  
+  Zone.init = function init () {
+!   if (typeof module !== 'undefined' && module && module.exports) {
+!     module.exports = new Zone();
+!   } else {
+      window.zone = new Zone();
+    }
+    Zone.patch();
+  };
+--- 627,636 ----
+  });
+  
+  Zone.init = function init () {
+!   if (typeof window !== 'undefined' && window) {
+      window.zone = new Zone();
++   } else {
++     module.exports = new Zone();
+    }
+    Zone.patch();
+  };

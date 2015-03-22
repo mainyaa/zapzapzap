@@ -1,7 +1,7 @@
 # Zapzapzap
 
 Zapzapzap is a simple todo application on Mac OS X.
-It is based on Angular 2 and [kitematic](https://github.com/kitematic/kitematic) and [ng2do](https://github.com/davideast/ng2do).
+It is based on Angular 2 and [atom-shell](https://github.com/atom/atom-shell) and [kitematic](https://github.com/kitematic/kitematic) and [ng2do](https://github.com/davideast/ng2do).
 
 ## How it works
 
@@ -31,7 +31,7 @@ To run the app in development:
 building mac app:
 
 - `echo - "-" > identity`
-- `gulp release` or `gulp release --beta`
+- `gulp release`
 
 if build successful you get `./dist/osx/Zapzapzap-0.0.2.zip` and `./dist/osx/Zapzapzap.app`
 
@@ -43,9 +43,11 @@ if build successful you get `./dist/osx/Zapzapzap-0.0.2.zip` and `./dist/osx/Zap
 rm -rf ~/Library/Application\ Support/Zapzapzap
 ```
 
-## hack
+## Hack
 
 `deps/es6-shim/es6-shim.js` and `deps/zone.js/zone.js` is patched.
+
+- `gulp patch` or `gulp unpatch`
 
 ## Copyright and License
 
