@@ -18,5 +18,5 @@
   "trailing": true,
   "smarttabs": true,
   "white": true,
-  "predef": [ "-Promise", "-colors" ]
+  "predef": [ "-Promise", "colors" ]
 }

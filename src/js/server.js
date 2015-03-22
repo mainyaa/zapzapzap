@@ -1,6 +1,5 @@
 'use strict';
 
-var colors   = require('colors');
 var Promise = require('bluebird');
 var httpServer = require('http-server');
 var portScanner   = require('portscanner');
@@ -23,7 +22,7 @@ var server = {
      */
     createServer: function (options) {
         var uri;
-        var server;
+        var httpd;
         return new Promise(function(fulfill, reject) {
             server.getRandomInt(3000,3994)
             .then(function(randomPort){
@@ -35,10 +34,10 @@ var server = {
                 }
                 options.port = 3000;
                 console.log(options);
-                server = httpServer.createServer(options);
-                server.listen(options.port, options.host);
+                httpd = httpServer.createServer(options);
+                httpd.listen(options.port, options.host);
                 uri = server.makeUrl(options.ssl ? 'https' : 'http', options.host, options.port);
-                console.log(server);
+                console.log(httpd);
                 console.log(uri);
                 console.log('Starting up http-server, serving '.yellow + 
                 options.root.cyan +

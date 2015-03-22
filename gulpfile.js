@@ -52,11 +52,12 @@ var options = {
     icon: isBeta ? './res/zapzapzap-beta.icns' : './res/zapzapzap.icns',
     bundle: 'com.zapzapzap.zapzapzap'
 };
-options.distosx = './dist/osx/' + options.appFilename + '/Contents/Resources/app/build',
-    options.dist = options.dev ? options.build : options.distosx
+options.distosx = './dist/osx/' + options.appFilename + '/Contents/Resources/app',
+options.dist = options.dev ? options.build : options.distosx
+options.quiet = options.dev ? false : true
 options.distBrowser = options.dist + '/browser'
 options.atompath = options.tmp+'/Atom.app/Contents/MacOS/Atom '
-options.launch = options.dev ? options.atompath + options.build+' --proxy-server=127.0.0.1:3000 --debug=5858' : options.atompath + options.distosx + ' --proxy-server=127.0.0.1:3000 --debug=5858';
+options.launch = options.dev ? options.atompath + options.build+' --proxy-server=127.0.0.1:3000 --debug=5858' : options.atompath + options.distosx + ' --proxy-server=127.0.0.1:3000';
 
 if (isVerbose) {
     console.log(options);
@@ -88,14 +89,10 @@ gulp.task('sass', function() {
 });
 
 gulp.task('lint', function() {
-    gulp.src(options.src+'*.js', {base: '.'})
+    return gulp.src([options.src+'*.js', options.src+'/js/**/*.js'], {base: '.'})
     .pipe(debug())
     .pipe(jshint())
-    .pipe(jshint.reporter('default'))
-    return gulp.src(options.src+'/js/**/*.js', {base: '.'})
-    .pipe(debug())
-    .pipe(jshint())
-    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('default'));
 });
 
 gulp.task('html', function() {
@@ -105,7 +102,7 @@ gulp.task('html', function() {
     ], {base: options.src})
     .pipe(debug())
     .pipe(wiredep())
-    .pipe(gulp.dest(options.dist))
+    .pipe(gulp.dest(options.dist));
 });
 
 gulp.task('watch', function() {
@@ -128,27 +125,27 @@ gulp.task('copy', function(cb) {
 gulp.task('copy-atom', function () {
     return gulp.src('src/*.json', {base: '.'})
     .pipe(debug())
-    .pipe(gulp.dest(options.dist))
+    .pipe(gulp.dest(options.dist));
 });
 gulp.task('copy-root', function () {
     return gulp.src(['./*.js', './*.html'], {base: options.src})
     .pipe(debug())
-    .pipe(gulp.dest(options.dist))
+    .pipe(gulp.dest(options.dist));
 });
 gulp.task('copy-bower', function () {
     return gulp.src('./bower_components/**/*', {base: '.'})
     ////.pipe(debug())
-    .pipe(gulp.dest(options.dist))
+    .pipe(gulp.dest(options.dist));
 });
 gulp.task('copy-bower-browser', function () {
     return gulp.src('./bower_components/**/*', {base: '.'})
     //.pipe(debug())
-    .pipe(gulp.dest(options.distBrowser))
+    .pipe(gulp.dest(options.distBrowser));
 });
 gulp.task('copy-node', function () {
     return gulp.src('./node_modules/**/*', {base: '.'})
     //.pipe(debug())
-    .pipe(gulp.dest(options.dist))
+    .pipe(gulp.dest(options.dist));
 });
 
 gulp.task('copy-all', function(cb) {
@@ -158,6 +155,7 @@ gulp.task('copy-all', function(cb) {
     );
 });
 gulp.task('copy-all-atom', function () {
+    gutil.log(options.dist);
     return gulp.src('').pipe(shell([
         'mkdir -p <%= dist %>',
         'mkdir -p <%= dist %>/browser',
@@ -185,7 +183,7 @@ gulp.task('copy-all-node', function () {
 });
 
 gulp.task('clean', function(cb) {
-    rimraf('./{build,dist}', cb);
+    rimraf('./build', cb);
 });
 
 gulp.task('init', function(cb) {
@@ -209,7 +207,6 @@ gulp.task('dist', function () {
         'mv ./dist/osx/<%= filename %>/Contents/MacOS/Atom ./dist/osx/<%= filename %>/Contents/MacOS/<%= name %>',
         'mkdir -p ./dist/osx/<%= filename %>/Contents/Resources/app',
         'mkdir -p ./dist/osx/<%= filename %>/Contents/Resources/app/js/bower_components',
-        'cp package.json dist/osx/<%= filename %>/Contents/Resources/app/',
         'mkdir -p dist/osx/<%= filename %>/Contents/Resources/app/resources',
         'cp -v res/* dist/osx/<%= filename %>/Contents/Resources/app/resources/ || :',
         'cp <%= icon %> dist/osx/<%= filename %>/Contents/Resources/atom.icns',
@@ -294,6 +291,7 @@ gulp.task('release', function (cb) {
         'watch',
         'sign',
         'zip',
+        'launch',
         cb
     );
 });

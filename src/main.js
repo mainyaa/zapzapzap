@@ -2,10 +2,17 @@
 
 var app = require('app');  // Module to control application life.
 var BrowserWindow = require('browser-window');  // Module to create native browser window.
-var globalShortcut = require('global-shortcut');
+var colors   = require('colors');
 var server = require('./js/server');
 var open = require('open');
 var _ = require('lodash');
+var minimist = require('minimist');
+var argv = require('minimist')(process.argv.slice(2));
+console.dir(argv);
+var dev = false;
+if (!_.isEmpty(argv._) && argv._[0] !== './dist/osx/Zapzapzap.app/Contents/Resources/app') {
+    dev = true;
+}
 
 var requestLogger = function(req, res, error) {
     var date = (new Date()).toUTCString();
@@ -49,7 +56,9 @@ app.on('ready', function() {
         console.log('server:ready');
         // Create the browser window.
         window = new BrowserWindow({width: 1140, height: 900});
-        //window.openDevTools()
+        if (dev) {
+            window.openDevTools()
+        }
         // waiting server up in 3 sec
         _.delay(function () {
             //console.log('file://' + __dirname + '/index.html');

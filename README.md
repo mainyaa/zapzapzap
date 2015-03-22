@@ -1,11 +1,18 @@
 # Zapzapzap
 
 Zapzapzap is a simple todo application on Mac OS X.
-It is based on [kitematic](https://github.com/kitematic/kitematic) and [ng2do](https://github.com/davideast/ng2do).
+It is based on Angular 2 and [kitematic](https://github.com/kitematic/kitematic) and [ng2do](https://github.com/davideast/ng2do).
 
 ## How it works
 
 Angular 2 is dependencies http server. Zapzapzap is create http server on machine. This server can't be access from other machines.
+Detail: 
+
+- Zapzapzap is lauch
+- Generate ramdom port(3000-3999)
+- Port scan to localhost:[port].
+- if port not using, Create http server on localhost:[port].
+- access http://localhost:[port]
 
 ## Install
 
@@ -19,7 +26,6 @@ this app using power of [atom-shell](https://github.com/atom/atom-shell)
 
 To run the app in development:
 
-- `gulp clean init`
 - `gulp`
 
 building mac app:
