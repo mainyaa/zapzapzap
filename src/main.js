@@ -10,8 +10,9 @@ var minimist = require('minimist');
 var argv = require('minimist')(process.argv.slice(2));
 console.dir(argv);
 var dev = false;
-if (!_.isEmpty(argv._) && argv._[0] !== './dist/osx/Zapzapzap.app/Contents/Resources/app') {
+if (!_.isEmpty(argv._) && argv._[0] !== './dist/osx/Zapzapzap.app/Contents/Resources/app/build') {
     dev = true;
+    console.log("dev: true");
 }
 
 var requestLogger = function(req, res, error) {
@@ -25,7 +26,7 @@ var requestLogger = function(req, res, error) {
 var options = {
     host: 'localhost', // only access local
     ssl: false,
-    root: 'build/browser/',
+    root: __dirname+'/browser',
     showDir: false,
     autoIndex: false,
     robots: false,
