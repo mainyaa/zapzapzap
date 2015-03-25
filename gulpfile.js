@@ -1,26 +1,31 @@
 'use strict';
 
-var gulp    = require('gulp');
-var shell   = require('gulp-shell');
-var gutil   = require('gulp-util');
-var gulpif  = require('gulp-if');
-var changed = require('gulp-changed');
-var debug   = require('gulp-debug');
-var wiredep = require('wiredep').stream;
-var sass    = require('gulp-sass');
-var jshint  = require('gulp-jshint');
-var rename  = require('gulp-rename');
-var Promise = require('bluebird');
-var rimraf  = Promise.promisify( require('rimraf'));
-var cprf    = Promise.promisify( require('cprf'));
-var mkdirp  = Promise.promisify( require('mkdirp'));
-var colors  = require('colors');
-var _       = require('lodash');
-var asar    = require('asar');
+var gulp         = require('gulp');
+var shell        = require('gulp-shell');
+var gutil        = require('gulp-util');
+var gulpif       = require('gulp-if');
+var changed      = require('gulp-changed');
+var debug        = require('gulp-debug');
+var wiredep      = require('wiredep').stream;
+var sass         = require('gulp-sass');
+var jshint       = require('gulp-jshint');
+var rename       = require('gulp-rename');
+var bump         = require('gulp-bump');
+var git          = require('gulp-git');
+var filter       = require('gulp-filter');
+var tag_version  = require('gulp-tag-version');
+var Promise      = require('bluebird');
+var rimraf       = Promise.promisify( require('rimraf'));
+var cprf         = Promise.promisify( require('cprf'));
+var mkdirp       = Promise.promisify( require('mkdirp'));
+var colors       = require('colors');
+var _            = require('lodash');
+var asar         = require('asar');
 var runSequence  = require('run-sequence');
 var atomdownload = require('gulp-download-atom-shell');
 
-var fs                = require('fs');
+var fs                = require('graceful-fs');
+Promise.promisifyAll(fs);
 var packagejson       = require('./package.json');
 var bowerjson         = require('./bower.json');
 var bowerdependencies = Object.keys(bowerjson.dependencies);
@@ -73,6 +78,43 @@ if (isVerbose) {
     console.log(options);
 }
 
+
+/**
+ * Bumping version number and tagging the repository with it.
+ * Please read http://semver.org/
+ *
+ * You can use the commands
+ *
+ *     gulp patch     # makes v0.1.0 → v0.1.1
+ *     gulp feature   # makes v0.1.1 → v0.2.0
+ *     gulp release   # makes v0.2.1 → v1.0.0
+ *
+ * To bump the version numbers accordingly after you did a patch,
+ * introduced a feature or made a backwards-incompatible release.
+ */
+
+function inc(importance) {
+    // get all the files to bump version in
+    var stream = gulp.src(['./package.json', './bower.json', './src/package.json'])
+        // bump the version number in those files
+        .pipe(bump({type: importance}))
+        // save it back to filesystem
+        .pipe(gulp.dest('./'));
+    var version = require('./package.json').version
+    console.log(version);
+    return stream;
+    stream = stream.pipe(git.commit('Bump '+version))
+        // read only one file to get the version number
+        .pipe(filter('package.json'))
+        // **tag it in the repository**
+        .pipe(tag_version());
+    return stream;
+}
+
+gulp.task('bump-patch', function() { return inc('patch'); })
+gulp.task('bump-feature', function() { return inc('minor'); })
+gulp.task('bump-release', function() { return inc('major'); })
+
 gulp.task('scripts', function() {
     return gulp.src([
         options.src+'/*.js',
@@ -118,11 +160,31 @@ gulp.task('launch', shell.task([
     //'open http://127.0.0.1:8080/debug?port=5858'
 ]));
 
+
+gulp.task('bump', function(){
+  gulp.src(['./package.json', './bower.json', './src/package.json'])
+  .pipe(bump({type:'minor'}))
+  .pipe(gulp.dest('./'));
+});
+
+gulp.task('settings', function () {
+    var stringsrc = function (filename, string) {
+        var src = require('stream').Readable({ objectMode: true });
+        src._read = function () {
+            this.push(new gutil.File({ cwd: '', base: '', path: filename, contents: new Buffer(string) }));
+            this.push(null);
+        };
+        return src;
+    };
+    return stringsrc('settings.json', JSON.stringify(settings)).pipe(gulp.dest('dist/osx/' + options.appFilename.replace(' ', '\ ').replace('(','\(').replace(')','\)') + '/Contents/Resources/app'));
+});
+
 gulp.task('copy-packagejson', function () {
     return gulp.src('src/*.json', {base: 'src'})
     .pipe(debug())
     .pipe(gulp.dest(options.dist));
 });
+
 gulp.task('copy-root', function () {
     return gulp.src(['./*.js', './*.html'], {base: options.src})
     .pipe(debug())
@@ -141,7 +203,7 @@ gulp.task('mkdir-dist', function () {
             return mkdirp(dist+'/browser/images');
         }).then(function(){
             return mkdirp(dist+'/browser/bower_components');
-        }).done(fulfill,reject);
+        }).done(fulfill,fulfill);
     });
 });
 
@@ -151,29 +213,45 @@ gulp.task('dist-copy-deps', function () {
             return cprf('./deps', distBrowser+'/deps');
         }).then(function(){
             return cprf('./quickstart', distBrowser+'/quickstart');
-        }).done(fulfill,reject);
+        }).done(fulfill);
     });
 });
 
 gulp.task('dist-copy-dependencies', function () {
+    var dep = null;
     return new Promise(function(fulfill, reject) {
-        var promiselist = [];
-        _.each(nodedependencies, function (d) {
-            gutil.log('Coping ', gutil.colors.cyan(d));
-            promiselist.push(cprf('./node_modules/'+d, dist+'/node_modules/'+d));
-        });
-        _.each(bowerdependencies, function (d) {
-            gutil.log('Coping ', gutil.colors.cyan(d));
-            promiselist.push(cprf('./bower_components/'+d, dist+'/bower_components/'+d));
-            promiselist.push(cprf('./bower_components/'+d, distBrowser+'/bower_components/'+d));
-        });
-        Promise.all(promiselist).done(fulfill,reject);
+        try{
+            var p1 = Promise.map(nodedependencies, function (d) {
+                dep = d;
+                gutil.log('Coping ', gutil.colors.blue(dist+'/node_modules/'+dep));
+                return cprf('./node_modules/'+dep, dist+'/node_modules/'+dep)
+            }, fulfill);
+            var p2 = Promise.map(bowerdependencies, function (d) {
+                dep = d;
+                gutil.log('Coping ', gutil.colors.blue(dist+'/bower_components/'+dep));
+                return cprf('./bower_components/'+dep, dist+'/bower_components/'+dep);
+            }).then(function(){
+                gutil.log('Coping ', gutil.colors.blue(distBrowser +'/bower_components/'+dep));
+                return cprf('./bower_components/'+dep, distBrowser+'/bower_components/'+dep);
+            }, fulfill);
+        } catch (err){
+            console.log("Error: "+err);
+            fulfill();
+        }
+        Promise.all([p1,p2]).done(fulfill, fulfill);
     });
 });
 
 gulp.task('clean', function() {
-    rimraf('./build');
+    return new Promise(function(fulfill, reject) {
+        try {
+            rimraf('./build').done(fulfill,fulfill);
+        } catch (err) {
+            fulfill();
+        }
+    });
 });
+
 
 gulp.task('init-atom', function(cb) {
     atomdownload({
@@ -215,6 +293,9 @@ gulp.task('dist-release', function () {
 });
 
 gulp.task('dist-plist', function () {
+    if (process.platform !== "darwin") {
+        return gulp.src('').dist('');
+    }
     var stream = gulp.src('').pipe(shell([
         '/usr/libexec/PlistBuddy -c "Set :CFBundleVersion <%= version %>" dist/osx/<%= filename %>/Contents/Info.plist',
         '/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName <%= name %>" dist/osx/<%= filename %>/Contents/Info.plist',
@@ -257,18 +338,6 @@ gulp.task('zip', function () {
     }));
 });
 
-gulp.task('settings', function () {
-    var stringsrc = function (filename, string) {
-        var src = require('stream').Readable({ objectMode: true });
-        src._read = function () {
-            this.push(new gutil.File({ cwd: '', base: '', path: filename, contents: new Buffer(string) }));
-            this.push(null);
-        };
-        return src;
-    };
-    return stringsrc('settings.json', JSON.stringify(settings)).pipe(gulp.dest('dist/osx/' + options.appFilename.replace(' ', '\ ').replace('(','\(').replace(')','\)') + '/Contents/Resources/app'));
-});
-
 gulp.task('patch', function () {
     return gulp.src('').pipe(shell([
         'cp -rf ./bower_components/zone.js/zone.js deps/zone.js/zone.js',
@@ -300,7 +369,7 @@ gulp.task('release', function (cb) {
         'build',
         'sign',
         'zip',
-        //'watch', 'launch',
+        'watch', 'launch',
         cb
     );
 });
@@ -308,7 +377,8 @@ gulp.task('release', function (cb) {
 gulp.task('build', function(cb) {
     runSequence(
         'mkdir-dist',
-        ['dist-copy-deps', 'dist-copy-dependencies', 'copy-packagejson'],
+        ['dist-copy-deps', 'copy-packagejson'],
+        'dist-copy-dependencies',
         ['lint', 'sass', 'scripts', 'html', 'settings'],
         cb
     );

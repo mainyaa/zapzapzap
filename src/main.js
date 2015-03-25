@@ -10,7 +10,7 @@ var minimist = require('minimist');
 var argv = require('minimist')(process.argv.slice(2));
 console.dir(argv);
 var dev = false;
-if (!_.isEmpty(argv._) && argv._[0] !== './dist/osx/Zapzapzap.app/Contents/Resources/app/build') {
+if (!_.isEmpty(argv._) && argv._[0] !== './dist/osx/Zapzapzap.app/Contents/Resources/app') {
     dev = true;
     console.log("dev: true");
 }
@@ -57,6 +57,8 @@ app.on('ready', function() {
         console.log('server:ready');
         // Create the browser window.
         window = new BrowserWindow({width: 1140, height: 900});
+        console.log('file://' + __dirname + '/index.html');
+        window.loadUrl('file://' + __dirname + '/index.html');
         // waiting server up in 3 sec
         _.delay(function () {
             //console.log('file://' + __dirname + '/index.html');
