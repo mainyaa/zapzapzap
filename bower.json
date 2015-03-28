@@ -7,13 +7,14 @@
   "private": true,
   "dependencies": {
     "jquery": "~2.1.3",
-    "angular": "~1.3.x",
     "roboto-fontface": "~0.2.x",
     "uikit": "~2.16.x",
     "html5-boilerplate": "~5.0.0",
     "es6-shim": "~0.27.1",
     "es5-shim": "~4.1.0",
-    "zone.js": "angular/zone.js#0.4.1"
+    "zone.js": "angular/zone.js#0.4.1",
+    "contextMenu": "~1.2.3",
+    "normalize.css": "~3.0.2"
   },
   "ignore": [
     "**/.*",

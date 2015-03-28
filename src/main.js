@@ -1,13 +1,14 @@
 'use strict';
 
-var app = require('app');  // Module to control application life.
-var BrowserWindow = require('browser-window');  // Module to create native browser window.
-var colors   = require('colors');
-var server = require('./js/server');
-var open = require('open');
-var _ = require('lodash');
-var minimist = require('minimist');
-var argv = require('minimist')(process.argv.slice(2));
+var app            = require('app');  // Module to control application life.
+var BrowserWindow  = require('browser-window');  // Module to create native browser window.
+var colors         = require('colors');
+var server         = require('./js/server');
+var open           = require('open');
+var _              = require('lodash');
+var minimist       = require('minimist');
+var argv           = require('minimist')(process.argv.slice(2));
+var globalShortcut = require('./js/global-shortcut').globalShortcut;
 console.dir(argv);
 var dev = false;
 if (!_.isEmpty(argv._) && argv._[0] !== './dist/osx/Zapzapzap.app/Contents/Resources/app') {
@@ -24,13 +25,14 @@ var requestLogger = function(req, res, error) {
     }
 };
 var options = {
-    host: 'localhost', // only access local
-    ssl: false,
-    root: __dirname+'/browser',
-    showDir: false,
+    host:      'localhost', // only access local
+    ssl:       false,
+    root:      __dirname+'/browser',
+    showDir:   false,
     autoIndex: false,
-    robots: false,
-    logFn: requestLogger,
+    robots:    false,
+    logFn:     requestLogger,
+    dev:       dev,
 };
 var isFullScreen = false;
 
@@ -49,16 +51,22 @@ app.on('window-all-closed', function() {
 });
 
 
-//app.commandLine.appendSwitch('remote-debugging-port', '8315');
-//app.commandLine.appendSwitch('host-rules', 'MAP * 127.0.0.1');
+if (dev) {
+    app.commandLine.appendSwitch('remote-debugging-port', '8315');
+    app.commandLine.appendSwitch('host-rules', 'MAP * 127.0.0.1');
+}
 app.on('ready', function() {
     console.log('app:ready');
     server.createServer(options).done(function (uri, server) {
         console.log('server:ready');
         // Create the browser window.
         window = new BrowserWindow({width: 1140, height: 900});
+        if (dev) {
+            window.openDevTools();
+        }
         console.log('file://' + __dirname + '/index.html');
         window.loadUrl('file://' + __dirname + '/index.html');
+        globalShortcut.register(window);
         // waiting server up in 3 sec
         _.delay(function () {
             //console.log('file://' + __dirname + '/index.html');
@@ -67,9 +75,6 @@ app.on('ready', function() {
             //window.webContents.send('webview-loadUrl', uri+'/index.html');
             //open(uri+'/index.html');
             window.loadUrl(uri+'/index.html');
-            if (dev) {
-                window.openDevTools()
-            }
         }, 5000);
 
         // Emitted when the window is closed.

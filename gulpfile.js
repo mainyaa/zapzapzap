@@ -7,13 +7,11 @@ var gulpif       = require('gulp-if');
 var changed      = require('gulp-changed');
 var debug        = require('gulp-debug');
 var wiredep      = require('wiredep').stream;
-var sass         = require('gulp-sass');
 var jshint       = require('gulp-jshint');
 var rename       = require('gulp-rename');
 var bump         = require('gulp-bump');
 var git          = require('gulp-git');
 var filter       = require('gulp-filter');
-var tag_version  = require('gulp-tag-version');
 var Promise      = require('bluebird');
 var rimraf       = Promise.promisify( require('rimraf'));
 var cprf         = Promise.promisify( require('cprf'));
@@ -25,15 +23,15 @@ var runSequence  = require('run-sequence');
 var atomdownload = require('gulp-download-atom-shell');
 
 var fs                = require('graceful-fs');
-Promise.promisifyAll(fs);
 var packagejson       = require('./package.json');
 var bowerjson         = require('./bower.json');
-var bowerdependencies = Object.keys(bowerjson.dependencies);
-var nodedependencies  = Object.keys(packagejson.dependencies);
 var isBeta            = process.argv.indexOf('--beta') !== -1;
 var isVerbose         = process.argv.indexOf('--verbose') !== -1;
-
 var settings;
+var bowerdependencies = Object.keys(bowerjson.dependencies);
+var nodedependencies  = Object.keys(packagejson.dependencies);
+
+Promise.promisifyAll(fs);
 try {
     settings = require('./settings.json');
 } catch (err) {
@@ -42,78 +40,36 @@ try {
 settings.beta = isBeta;
 
 var options = {
-    dev: process.argv.indexOf('release') === -1,
-    beta: isBeta,
-    src: './src',
-    srcBrowser: './src/browser',
-    build: './build',
-    dist: './dist',
-    tmp: './cache',
-    e2e: './e2e',
-    errorHandler: function(title) {
-        return function(err) {
-            gutil.log(gutil.colors.red('[' + title + ']'), err.toString());
-            this.emit('end');
-        };
-    },
-    appFilename: isBeta ? 'Zapzapzap-Beta.app' : 'Zapzapzap.app',
-    appName: isBeta ? 'Zapzapzap-Beta' : 'Zapzapzap',
-    name: 'Zapzapzap',
-    icon: (isBeta) ? './res/zapzapzap-beta.icns' : './res/zapzapzap.icns',
-    bundle: 'com.zapzapzap.zapzapzap'
+    dev          : process.argv.indexOf('release') === -1,
+    beta         : isBeta,
+    src          : './src',
+    srcBrowser   : './src/browser',
+    res          : './res',
+    build        : './build',
+    dist         : './dist',
+    tmp          : './cache',
+    e2e          : './e2e',
+    appFilename  : isBeta ? 'Zapzapzap-Beta.app'           : 'Zapzapzap.app',
+    appName      : isBeta ? 'Zapzapzap-Beta'               : 'Zapzapzap',
+    name         : 'Zapzapzap',
+    icon         : (isBeta) ? './res/zapzapzap-beta.icns'  : './res/zapzapzap.icns',
+    bundle       : 'com.zapzapzap.zapzapzap'
 };
-options.flag = isVerbose ? '-rfv' : '-rf';
+options.flag        = isVerbose ? '-rfv' : '-rf';
 options.distRelease = './dist/osx/' + options.appFilename + '/Contents/Resources/app';
-options.dist = options.dev ? options.build : options.distRelease;
+options.dist        = options.dev ? options.build : options.distRelease;
 options.distBrowser = options.dist + '/browser';
-options.atompath = options.tmp+'/Atom.app/Contents/MacOS/Atom ';
-options.launch = options.dev ? options.atompath + options.build+' --debug=5858' : options.atompath + options.distRelease+' --debug=5858';
-var dist = options.dist;
-var src = options.src;
-var srcBrowser = options.srcBrowser;
-var distBrowser = options.distBrowser;
+options.atompath    = options.tmp+'/Atom.app/Contents/MacOS/Atom ';
+options.launch      = options.dev ? options.atompath + options.build+' --debug=5858' : options.atompath + options.distRelease+' --debug=5858';
+var dist            = options.dist;
+var src             = options.src;
+var srcBrowser      = options.srcBrowser;
+var distBrowser     = options.distBrowser;
 gutil.log('launch', options.launch);
 
 if (isVerbose) {
     console.log(options);
 }
-
-
-/**
- * Bumping version number and tagging the repository with it.
- * Please read http://semver.org/
- *
- * You can use the commands
- *
- *     gulp patch     # makes v0.1.0 → v0.1.1
- *     gulp feature   # makes v0.1.1 → v0.2.0
- *     gulp release   # makes v0.2.1 → v1.0.0
- *
- * To bump the version numbers accordingly after you did a patch,
- * introduced a feature or made a backwards-incompatible release.
- */
-
-function inc(importance) {
-    // get all the files to bump version in
-    var stream = gulp.src(['./package.json', './bower.json', './src/package.json'])
-        // bump the version number in those files
-        .pipe(bump({type: importance}))
-        // save it back to filesystem
-        .pipe(gulp.dest('./'));
-    var version = require('./package.json').version
-    console.log(version);
-    return stream;
-    stream = stream.pipe(git.commit('Bump '+version))
-        // read only one file to get the version number
-        .pipe(filter('package.json'))
-        // **tag it in the repository**
-        .pipe(tag_version());
-    return stream;
-}
-
-gulp.task('bump-patch', function() { return inc('patch'); })
-gulp.task('bump-feature', function() { return inc('minor'); })
-gulp.task('bump-release', function() { return inc('major'); })
 
 gulp.task('scripts', function() {
     return gulp.src([
@@ -125,10 +81,9 @@ gulp.task('scripts', function() {
     .pipe(gulp.dest(options.dist));
 });
 
-gulp.task('sass', function() {
-    return gulp.src(options.src+'/scss/*.scss', {base: options.src})
+gulp.task('css', function() {
+    return gulp.src(options.src+'/css/*.css', {base: options.src})
     .pipe(debug())
-    .pipe(sass())
     .pipe(gulp.dest(options.dist));
 });
 
@@ -152,20 +107,13 @@ gulp.task('html', function() {
 gulp.task('watch', function() {
     gulp.watch(options.src+'/**/*.html', ['html']);
     gulp.watch(options.src+'/**/*.js', ['lint', 'scripts']);
-    gulp.watch(options.src+'/**/*.scss', ['sass']);
+    gulp.watch(options.src+'/**/*.css', ['css']);
 });
 
 gulp.task('launch', shell.task([
     options.launch,
     //'open http://127.0.0.1:8080/debug?port=5858'
 ]));
-
-
-gulp.task('bump', function(){
-  gulp.src(['./package.json', './bower.json', './src/package.json'])
-  .pipe(bump({type:'minor'}))
-  .pipe(gulp.dest('./'));
-});
 
 gulp.task('settings', function () {
     var stringsrc = function (filename, string) {
@@ -210,6 +158,10 @@ gulp.task('mkdir-dist', function () {
 gulp.task('dist-copy-deps', function () {
     return new Promise(function(fulfill, reject) {
         cprf(srcBrowser+'/images', distBrowser+'/images').then(function(){
+            return cprf(options.res+'/favicon.ico', dist+'/favicon.ico');
+        }).then(function(){
+            return cprf(options.res+'/favicon.ico', distBrowser+'/favicon.ico');
+        }).then(function(){
             return cprf('./deps', distBrowser+'/deps');
         }).then(function(){
             return cprf('./quickstart', distBrowser+'/quickstart');
@@ -229,8 +181,14 @@ gulp.task('dist-copy-dependencies', function () {
             var p2 = Promise.map(bowerdependencies, function (d) {
                 dep = d;
                 gutil.log('Coping ', gutil.colors.blue(dist+'/bower_components/'+dep));
-                return cprf('./bower_components/'+dep, dist+'/bower_components/'+dep);
-            }).then(function(){
+                return new Promise(function(fulfill, reject) {
+                    cprf('./bower_components/'+dep, dist+'/bower_components/'+dep).then(function(){
+                        fulfill(dep);
+                    });
+                });
+            }, fulfill);
+            var p3 = Promise.map(bowerdependencies, function (d) {
+                dep = d;
                 gutil.log('Coping ', gutil.colors.blue(distBrowser +'/bower_components/'+dep));
                 return cprf('./bower_components/'+dep, distBrowser+'/bower_components/'+dep);
             }, fulfill);
@@ -238,7 +196,7 @@ gulp.task('dist-copy-dependencies', function () {
             console.log("Error: "+err);
             fulfill();
         }
-        Promise.all([p1,p2]).done(fulfill, fulfill);
+        Promise.all([p1,p2,p3]).done(fulfill, fulfill);
     });
 });
 
@@ -369,7 +327,7 @@ gulp.task('release', function (cb) {
         'build',
         'sign',
         'zip',
-        'watch', 'launch',
+        //'watch', 'launch',
         cb
     );
 });
@@ -377,9 +335,10 @@ gulp.task('release', function (cb) {
 gulp.task('build', function(cb) {
     runSequence(
         'mkdir-dist',
-        ['dist-copy-deps', 'copy-packagejson'],
+        'dist-copy-deps',
+        'copy-packagejson',
         'dist-copy-dependencies',
-        ['lint', 'sass', 'scripts', 'html', 'settings'],
+        ['lint', 'css', 'scripts', 'html', 'settings'],
         cb
     );
 });

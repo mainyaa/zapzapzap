@@ -1,7 +1,10 @@
 <!doctype html>
 <html>
     <head>
+        <meta charset="utf-8">
+        <meta name="robots" content="noindex,nofollow">
         <title>ng2do</title>
+        <link rel="stylesheet" href="bower_components/normalize.css/normalize.css" media="screen" title="no title" charset="utf-8">
         <link rel="stylesheet" href="deps/css/main.css" media="screen" title="no title" charset="utf-8">
         <script src="/deps/es6-shim/es6-shim.js"></script>
         <script src="/deps/zone.js/zone.js"></script>
@@ -11,6 +14,7 @@
 
         <script src="/deps/firebase/firebase.js"></script>
         <script>
+
 document.addEventListener("DOMContentLoaded", function(event) {
     System.paths = {
         'angular2/*':'quickstart/angular2/*.js', // Angular
@@ -21,8 +25,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
         };
 
         System.import('todo').then(function(module) {
-        module.main();
-    }, console.log.bind(console));
+            module.main();
+        }, console.log.bind(console));
 });
         </script>
     </body>
