@@ -12,18 +12,18 @@ module.exports.globalShortcut = {
         return new Promise(function(fulfill, reject) {
 
             var success = globalShortcut.register('cmd+alt+i', function() {
-                window.toggleDevTools()
+                window.toggleDevTools();
             });
             if (!success) {
                 return reject();
             }
             success = globalShortcut.register('ctrl+alt+i', function() {
-                window.toggleDevTools()
+                window.toggleDevTools();
             });
             if (!success) {
                 return reject();
             }
-            return fulfill()
+            return fulfill();
         });
     }
 };

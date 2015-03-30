@@ -11,7 +11,9 @@ var jshint       = require('gulp-jshint');
 var rename       = require('gulp-rename');
 var bump         = require('gulp-bump');
 var git          = require('gulp-git');
+var sass         = require('gulp-sass');
 var filter       = require('gulp-filter');
+var inject       = require('gulp-inject');
 var Promise      = require('bluebird');
 var rimraf       = Promise.promisify( require('rimraf'));
 var cprf         = Promise.promisify( require('cprf'));
@@ -71,19 +73,55 @@ if (isVerbose) {
     console.log(options);
 }
 
+gulp.task('inject-snippet', function() {
+    gulp.src(options.srcBrowser+'/index.html')
+    .pipe(inject(gulp.src(['./src/snippet/*.html']), {
+        starttag: '<!-- inject:snippet:{{ext}} -->',
+        transform: function (filePath, file) {
+            return file.contents.toString('utf8')
+        }
+    }))
+    .pipe(gulp.dest(options.distBrowser));
+});
+
+
+gulp.task('watch', function() {
+    gulp.watch(options.src+'/**/*.html', ['html']);
+    gulp.watch(options.src+'/**/*.js', ['lint', 'scripts']);
+    gulp.watch(options.src+'/**/*.css', ['css']);
+    gulp.watch(options.src+'/**/*.scss', ['scss']);
+});
+
+gulp.task('launch', shell.task([
+    options.launch,
+    //'open http://127.0.0.1:8080/debug?port=5858'
+]));
+
 gulp.task('scripts', function() {
     return gulp.src([
         options.src+'/*.js',
-        options.src+'/js/**/*.js',
-        options.srcBrowser+'/*.js',
+        options.src+'/**/*.js',
     ], {base: options.src})
     .pipe(debug())
     .pipe(gulp.dest(options.dist));
 });
 
 gulp.task('css', function() {
-    return gulp.src(options.src+'/css/*.css', {base: options.src})
+    return gulp.src([
+        options.src+'/*.css',
+        options.src+'/**/*.css'
+    ], {base: options.src})
     .pipe(debug())
+    .pipe(gulp.dest(options.dist));
+});
+
+gulp.task('scss', function() {
+    return gulp.src([
+        options.src+'/*.scss',
+        options.src+'/**/*.scss'
+    ], {base: options.src})
+    .pipe(debug())
+    .pipe(sass())
     .pipe(gulp.dest(options.dist));
 });
 
@@ -103,17 +141,6 @@ gulp.task('html', function() {
     .pipe(wiredep())
     .pipe(gulp.dest(options.dist));
 });
-
-gulp.task('watch', function() {
-    gulp.watch(options.src+'/**/*.html', ['html']);
-    gulp.watch(options.src+'/**/*.js', ['lint', 'scripts']);
-    gulp.watch(options.src+'/**/*.css', ['css']);
-});
-
-gulp.task('launch', shell.task([
-    options.launch,
-    //'open http://127.0.0.1:8080/debug?port=5858'
-]));
 
 gulp.task('settings', function () {
     var stringsrc = function (filename, string) {
@@ -150,6 +177,8 @@ gulp.task('mkdir-dist', function () {
         }).then(function(){
             return mkdirp(dist+'/browser/images');
         }).then(function(){
+            return mkdirp(dist+'/browser/node_modules');
+        }).then(function(){
             return mkdirp(dist+'/browser/bower_components');
         }).done(fulfill,fulfill);
     });
@@ -170,33 +199,30 @@ gulp.task('dist-copy-deps', function () {
 });
 
 gulp.task('dist-copy-dependencies', function () {
-    var dep = null;
     return new Promise(function(fulfill, reject) {
         try{
             var p1 = Promise.map(nodedependencies, function (d) {
-                dep = d;
-                gutil.log('Coping ', gutil.colors.blue(dist+'/node_modules/'+dep));
-                return cprf('./node_modules/'+dep, dist+'/node_modules/'+dep)
+                gutil.log('Coping ', gutil.colors.blue(dist+'/node_modules/'+d));
+                return cprf('./node_modules/'+d, dist+'/node_modules/'+d)
             }, fulfill);
-            var p2 = Promise.map(bowerdependencies, function (d) {
-                dep = d;
-                gutil.log('Coping ', gutil.colors.blue(dist+'/bower_components/'+dep));
-                return new Promise(function(fulfill, reject) {
-                    cprf('./bower_components/'+dep, dist+'/bower_components/'+dep).then(function(){
-                        fulfill(dep);
-                    });
-                });
+            var p2 = Promise.map(nodedependencies, function (d) {
+                gutil.log('Coping ', gutil.colors.blue(distBrowser+'/node_modules/'+d));
+                return cprf('./node_modules/'+d, distBrowser+'/node_modules/'+d)
             }, fulfill);
             var p3 = Promise.map(bowerdependencies, function (d) {
-                dep = d;
-                gutil.log('Coping ', gutil.colors.blue(distBrowser +'/bower_components/'+dep));
-                return cprf('./bower_components/'+dep, distBrowser+'/bower_components/'+dep);
+                gutil.log('Coping ', gutil.colors.blue(dist+'/bower_components/'+d));
+                return cprf('./bower_components/'+d, dist+'/bower_components/'+d).then(function(){
+                });
+            }, fulfill);
+            var p4 = Promise.map(bowerdependencies, function (d) {
+                gutil.log('Coping ', gutil.colors.blue(distBrowser +'/bower_components/'+d));
+                return cprf('./bower_components/'+d, distBrowser+'/bower_components/'+d);
             }, fulfill);
         } catch (err){
             console.log("Error: "+err);
             fulfill();
         }
-        Promise.all([p1,p2,p3]).done(fulfill, fulfill);
+        Promise.all([p1,p2,p3,p4]).done(fulfill, fulfill);
     });
 });
 
@@ -239,11 +265,11 @@ gulp.task('dist-release', function () {
         }).then(function() {
             return mkdirp(distapp);
         }).then(function() {
+            return mkdirp(distapp+'/css');
+        }).then(function() {
             return mkdirp(distapp+'/js');
         }).then(function() {
             return mkdirp(distapp+'/js/bower_components');
-        }).then(function() {
-            return cprf('res/bin', distapp+'/resources');
         }).then(function() {
             return cprf(options.icon, distatom+'/Contents/Resources/atom.icns');
         }).done(fulfill,reject);
@@ -313,6 +339,7 @@ gulp.task('unpatch', function () {
 
 gulp.task('init', function(cb) {
     runSequence(
+        'clean',
         ['patch', 'init-atom'],
         cb
     );
@@ -338,14 +365,14 @@ gulp.task('build', function(cb) {
         'dist-copy-deps',
         'copy-packagejson',
         'dist-copy-dependencies',
-        ['lint', 'css', 'scripts', 'html', 'settings'],
+        ['lint', 'css', 'scss', 'scripts', 'html', 'settings'],
         cb
     );
 });
 gulp.task('default', function(cb) {
     runSequence(
-        'clean',
         'build',
+        'inject-snippet',
         'watch', 'launch',
         cb);
 });

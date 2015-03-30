@@ -25,7 +25,7 @@ var server = {
         return new Promise(function(fulfill, reject) {
             portfinder.basePort = server.getRandomInt(3000,3999);
             portfinder.getPort(function (err, port) {
-                if (err) throw err;
+                if (err) { reject(err); }
                 options.port = port;
                 console.log(options);
                 httpd = httpServer.createServer(options);

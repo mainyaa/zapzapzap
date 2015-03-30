@@ -2,6 +2,7 @@
 
 var app            = require('app');  // Module to control application life.
 var BrowserWindow  = require('browser-window');  // Module to create native browser window.
+var ipc            = require('ipc');
 var colors         = require('colors');
 var server         = require('./js/server');
 var open           = require('open');
@@ -82,9 +83,11 @@ app.on('ready', function() {
             window = null;
         });
     });
-
 });
 
+ipc.on('toggleDevTools', function(event) {
+    window.toggleDevTools();
+});
 
 module.exports = window;
 
